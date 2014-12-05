@@ -3,6 +3,7 @@ package eu.siacs.conversations.entities;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.os.SystemClock;
+import android.content.Context;
 
 import net.java.otr4j.crypto.OtrCryptoEngineImpl;
 import net.java.otr4j.crypto.OtrCryptoException;
@@ -27,6 +28,7 @@ public class Account extends AbstractEntity {
 	public static final String TABLENAME = "accounts";
 
 	public static final String USERNAME = "username";
+	public static final String JABBERID = "jabberid";
 	public static final String SERVER = "server";
 	public static final String PASSWORD = "password";
 	public static final String OPTIONS = "options";
@@ -107,6 +109,8 @@ public class Account extends AbstractEntity {
 	public List<Conversation> pendingConferenceJoins = new CopyOnWriteArrayList<>();
 	public List<Conversation> pendingConferenceLeaves = new CopyOnWriteArrayList<>();
 	protected Jid jid;
+	protected String server;
+    protected String username;
 	protected String password;
 	protected int options = 0;
 	protected String rosterVersion;
@@ -126,12 +130,12 @@ public class Account extends AbstractEntity {
 		this.uuid = "0";
 	}
 
-	public Account(final Jid jid, final String password) {
-		this(java.util.UUID.randomUUID().toString(), jid,
+	public Account(final String username, final Jid jid, final String password) {
+		this(java.util.UUID.randomUUID().toString(), username, jid,
 				password, 0, null, "", null);
 	}
 
-	public Account(final String uuid, final Jid jid,
+	public Account(final String uuid, final String username, final Jid jid,
 			final String password, final int options, final String rosterVersion, final String keys,
 			final String avatar) {
 		this.uuid = uuid;
@@ -139,6 +143,7 @@ public class Account extends AbstractEntity {
 		if (jid.isBareJid()) {
 			this.setResource("mobile");
 		}
+        this.username = username;
 		this.password = password;
 		this.options = options;
 		this.rosterVersion = rosterVersion;
@@ -153,11 +158,12 @@ public class Account extends AbstractEntity {
 	public static Account fromCursor(Cursor cursor) {
 		Jid jid = null;
 		try {
-			jid = Jid.fromParts(cursor.getString(cursor.getColumnIndex(USERNAME)),
-					cursor.getString(cursor.getColumnIndex(SERVER)), "mobile");
+			jid = Jid.fromString(cursor.getString(cursor.getColumnIndex(JABBERID)) + "/mobile");
+
 		} catch (final InvalidJidException ignored) {
 		}
 		return new Account(cursor.getString(cursor.getColumnIndex(UUID)),
+                cursor.getString(cursor.getColumnIndex(USERNAME)),
 				jid,
 				cursor.getString(cursor.getColumnIndex(PASSWORD)),
 				cursor.getInt(cursor.getColumnIndex(OPTIONS)),
@@ -179,19 +185,19 @@ public class Account extends AbstractEntity {
 	}
 
 	public String getUsername() {
-		return jid.getLocalpart();
+		return this.username;
 	}
 
-	public void setUsername(final String username) throws InvalidJidException {
-		jid = Jid.fromParts(username, jid.getDomainpart(), jid.getResourcepart());
+	public void setUsername(final String value)  {
+        this.username = value;
 	}
 
-	public Jid getServer() {
-		return jid.toDomainJid();
+	public String getServer() {
+		return "yetiim.mynetworkphone.com";
 	}
 
-	public void setServer(final String server) throws InvalidJidException {
-		jid = Jid.fromParts(jid.getLocalpart(), server, jid.getResourcepart());
+	public void setServer(final String value)  {
+        this.server = value;
 	}
 
 	public String getPassword() {
@@ -228,7 +234,7 @@ public class Account extends AbstractEntity {
 
 	public void setResource(final String resource) {
 		try {
-			jid = Jid.fromParts(jid.getLocalpart(), jid.getDomainpart(), resource);
+			jid = Jid.fromString(jid.getLocalpart() + "@" + jid.getDomainpart() + "/" + resource);
 		} catch (final InvalidJidException ignored) {
 		}
 	}
@@ -236,6 +242,10 @@ public class Account extends AbstractEntity {
 	public Jid getJid() {
 		return jid;
 	}
+
+    public String getDomain() {
+        return jid.getDomainpart();
+    }
 
 	public JSONObject getKeys() {
 		return keys;
@@ -270,8 +280,9 @@ public class Account extends AbstractEntity {
 	public ContentValues getContentValues() {
 		ContentValues values = new ContentValues();
 		values.put(UUID, uuid);
-		values.put(USERNAME, jid.getLocalpart());
-		values.put(SERVER, jid.getDomainpart());
+		values.put(JABBERID, jid.toBareJid().toString());
+        values.put(USERNAME, username);
+		values.put(SERVER, server);
 		values.put(PASSWORD, password);
 		values.put(OPTIONS, options);
 		values.put(KEYS, this.keys.toString());

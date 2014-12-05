@@ -54,7 +54,7 @@ public final class Jid {
             out = localpart + "@" + domainpart;
         }
         if (resourcepart != null && !resourcepart.isEmpty()) {
-            out = out + "/" + resourcepart;
+            out = localpart + "/" + resourcepart;
         }
         return new Jid(out);
     }

@@ -11,7 +11,15 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.util.SparseArray;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ssl.StrictHostnameVerifier;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParserException;
@@ -43,6 +51,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
 
 import eu.siacs.conversations.Config;
+import eu.siacs.conversations.crypto.sasl.AdpIamToken;
 import eu.siacs.conversations.crypto.sasl.DigestMd5;
 import eu.siacs.conversations.crypto.sasl.Plain;
 import eu.siacs.conversations.crypto.sasl.SaslMechanism;
@@ -142,8 +151,47 @@ public class XmppConnection implements Runnable {
 		}
 	}
 
+    public String iamLogin() {
+        String token = "";
+        // Create a new HttpClient and Post Header
+        HttpClient httpclient = new DefaultHttpClient();
+        HttpPost httppost = new HttpPost("https://login-dit.adpedge.com/siteminderagent/forms/login.fcc");
+
+        try {
+
+            httppost.setHeader("Connection", "keep-alive");
+            httppost.setHeader("Origin", "https://login-dit.adpedge.com");
+            httppost.setHeader("Cookie", "loginId=schonstals" );
+            httppost.setHeader("Connection", "keep-alive");
+            httppost.setHeader("Content-Type", "application/x-www-form-urlencoded");
+
+            // Add your data
+            List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
+            nameValuePairs.add(new BasicNameValuePair("username", "schonstals"));
+            nameValuePairs.add(new BasicNameValuePair("password", "yetiPASS$"));
+            nameValuePairs.add(new BasicNameValuePair("SMENC", "ISO-8859-1"));
+            nameValuePairs.add(new BasicNameValuePair("SMLOCALE", "US-EN"));
+            nameValuePairs.add(new BasicNameValuePair("USER", "schonstals"));
+            nameValuePairs.add(new BasicNameValuePair("target", "-SM-https://login--dit.adpedge.com/sso/route/redirector.php"));
+            httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+
+            // Execute HTTP Post Request
+            HttpResponse response = httpclient.execute(httppost);
+
+            Log.d(Config.LOGTAG, ": iam success " );
+        } catch (ClientProtocolException e) {
+            Log.d(Config.LOGTAG, ": iam fail " + e.getMessage());
+        } catch (IOException e) {
+            Log.d(Config.LOGTAG, ": iam fail " + e.getMessage());
+        }
+
+
+        return token;
+    }
+
 	protected void connect() {
-		Log.d(Config.LOGTAG, account.getJid().toBareJid().toString() + ": connecting");
+
+		Log.d(Config.LOGTAG, account.getUsername() + ": connecting to " + account.getServer() );
 		enabledCompression = false;
 		enabledEncryption = false;
 		lastConnect = SystemClock.elapsedRealtime();
@@ -173,7 +221,7 @@ public class XmppConnection implements Runnable {
 							// TODO: Handle me?`
 							srvRecordServer = "";
 						}
-						int srvRecordPort = namePort.getInt("port");
+						int srvRecordPort = 5222; //namePort.getInt("port");
 						String srvIpServer = namePort.getString("ipv4");
 						InetSocketAddress addr;
 						if (srvIpServer != null) {
@@ -203,7 +251,8 @@ public class XmppConnection implements Runnable {
 				}
 			} else if (result.containsKey("error")
 					&& "nosrv".equals(result.getString("error", null))) {
-				socket = new Socket(account.getServer().getDomainpart(), 5222);
+                Log.d(Config.LOGTAG,"failed to resolve DNS for xmpp server using hardcoded ip");
+                        socket = new Socket("198.249.200.8", 5222);
 			} else {
 				throw new IOException("timeout in dns");
 			}
@@ -334,8 +383,8 @@ public class XmppConnection implements Runnable {
 								} catch (final NumberFormatException ignored) {
 
 								}
-								sendServiceDiscoveryInfo(account.getServer());
-								sendServiceDiscoveryItems(account.getServer());
+								sendServiceDiscoveryInfo(account.getJid().toDomainJid());
+								sendServiceDiscoveryItems(account.getJid().toDomainJid());
 								sendInitialPing();
 							} else if (nextTag.isStart("r")) {
 								tagReader.readElement(nextTag);
@@ -577,7 +626,7 @@ public class XmppConnection implements Runnable {
 							sslSocket.setEnabledProtocols(supportProtocols);
 
                             if (verifier != null
-                                    && !verifier.verify(account.getServer().getDomainpart(),
+                                    && !verifier.verify("mongoose3.nislab.cdk.com", //account.getServer().getDomainpart(),
                                     sslSocket.getSession())) {
 								Log.d(Config.LOGTAG,account.getJid().toBareJid()+": TLS certificate verification failed");
 								disconnect(true);
@@ -622,8 +671,11 @@ public class XmppConnection implements Runnable {
 			} else if (mechanisms.contains("DIGEST-MD5")) {
 				saslMechanism = new DigestMd5(tagWriter, account, mXmppConnectionService.getRNG());
 			} else if (mechanisms.contains("PLAIN")) {
-				saslMechanism = new Plain(tagWriter, account);
-			}
+                //saslMechanism = new Plain(tagWriter, account);
+                saslMechanism = new AdpIamToken(tagWriter, account);
+            }else if (mechanisms.contains("ADP-IAM-TOKEN")) {
+                saslMechanism = new AdpIamToken(tagWriter, account);
+            }
 			final JSONObject keys = account.getKeys();
 			try {
 				if (keys.has(Account.PINNED_MECHANISM_KEY) &&
@@ -692,7 +744,7 @@ public class XmppConnection implements Runnable {
 	private void sendRegistryRequest() {
 		IqPacket register = new IqPacket(IqPacket.TYPE_GET);
 		register.query("jabber:iq:register");
-		register.setTo(account.getServer());
+		register.setTo(account.getJid().toDomainJid());
 		sendIqPacket(register, new OnIqPacketReceived() {
 
 			@Override
@@ -770,8 +822,8 @@ public class XmppConnection implements Runnable {
 						}
 						enabledCarbons = false;
 						disco.clear();
-						sendServiceDiscoveryInfo(account.getServer());
-						sendServiceDiscoveryItems(account.getServer());
+						sendServiceDiscoveryInfo(account.getJid().toDomainJid());
+						sendServiceDiscoveryItems(account.getJid().toDomainJid());
 						if (bindListener != null) {
 							bindListener.onBind(account);
 						}
@@ -848,9 +900,11 @@ public class XmppConnection implements Runnable {
 				List<Element> elements = packet.query().getChildren();
 				for (Element element : elements) {
 					if (element.getName().equals("item")) {
-						final Jid jid = element.getAttributeAsJid("jid");
-						if (jid != null && !jid.equals(account.getServer())) {
-							sendServiceDiscoveryInfo(jid);
+						final String jid = element.getAttribute("jid");
+						try {
+							sendServiceDiscoveryInfo(Jid.fromString(jid).toDomainJid());
+						} catch (final InvalidJidException ignored) {
+							// TODO: Handle the case where an external JID is technically invalid?
 						}
 					}
 				}
@@ -1113,9 +1167,9 @@ public class XmppConnection implements Runnable {
 			this.connection = connection;
 		}
 
-		private boolean hasDiscoFeature(final Jid server, final String feature) {
-			return connection.disco.containsKey(server.toDomainJid().toString()) &&
-				connection.disco.get(server.toDomainJid().toString()).contains(feature);
+		private boolean hasDiscoFeature(final String server, final String feature) {
+			return connection.disco.containsKey(server) &&
+				connection.disco.get(server).contains(feature);
 		}
 
 		public boolean carbons() {

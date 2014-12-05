@@ -27,8 +27,8 @@ import android.util.Log;
 public class DNSHelper {
 	protected static Client client = new Client();
 
-	public static Bundle getSRVRecord(final Jid jid) throws IOException {
-        final String host = jid.getDomainpart();
+	public static Bundle getSRVRecord(final String server) throws IOException {
+        final String host = server;
 		String dns[] = client.findDNS();
 
 		if (dns != null) {
@@ -43,7 +43,7 @@ public class DNSHelper {
 				}
 			}
 		}
-		return queryDNS(host, InetAddress.getByName("8.8.8.8"));
+		return queryDNS(host, InetAddress.getByName(server));
 	}
 
 	public static Bundle queryDNS(String host, InetAddress dnsServer) {
