@@ -46,12 +46,13 @@ public class Element {
 	}
 
 	public Element findChild(String name) {
+        Element retval = null;
 		for (Element child : this.children) {
 			if (child.getName().equals(name)) {
-				return child;
+				retval =  child;
 			}
 		}
-		return null;
+		return retval;
 	}
 
 	public Element findChild(String name, String xmlns) {

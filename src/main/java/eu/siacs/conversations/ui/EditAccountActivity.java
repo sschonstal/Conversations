@@ -36,8 +36,6 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 
 	private AutoCompleteTextView mAccountName;
 	private EditText mPassword;
-	private EditText mPasswordConfirm;
-	private CheckBox mRegisterNew;
 	private Button mCancelButton;
 	private Button mSaveButton;
 
@@ -307,9 +305,9 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 		super.onStart();
 		if (getIntent() != null) {
 
-            this.usernameToEdit = getIntent().getStringExtra("jid");
+            this.usernameToEdit = getIntent().getStringExtra("userName");
             if (this.usernameToEdit != null) {
-				this.mRegisterNew.setVisibility(View.GONE);
+			//	this.mRegisterNew.setVisibility(View.GONE);
 				getActionBar().setTitle(getString(R.string.account_details));
 			} else {
 				this.mAvatar.setVisibility(View.GONE);

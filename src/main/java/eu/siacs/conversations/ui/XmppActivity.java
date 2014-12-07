@@ -358,7 +358,7 @@ public abstract class XmppActivity extends Activity {
 
 	public void switchToAccount(Account account) {
 		Intent intent = new Intent(this, EditAccountActivity.class);
-		intent.putExtra("jid", account.getJid().toBareJid().toString());
+		intent.putExtra("userName", account.getUsername());
 		startActivity(intent);
 	}
 

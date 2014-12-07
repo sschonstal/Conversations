@@ -313,7 +313,7 @@ public class ConversationFragment extends Fragment {
 						} else {
 							Account account = message.getConversation().getAccount();
 							Intent intent = new Intent(activity, EditAccountActivity.class);
-							intent.putExtra("jid", account.getJid().toBareJid().toString());
+							intent.putExtra("userName", account.getUsername());
 							startActivity(intent);
 						}
 					}

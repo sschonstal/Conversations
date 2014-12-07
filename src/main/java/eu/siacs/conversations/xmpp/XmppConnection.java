@@ -251,8 +251,9 @@ public class XmppConnection implements Runnable {
 				}
 			} else if (result.containsKey("error")
 					&& "nosrv".equals(result.getString("error", null))) {
-                Log.d(Config.LOGTAG,"failed to resolve DNS for xmpp server using hardcoded ip");
-                        socket = new Socket("198.249.200.8", 5222);
+                String servername = account.getServer();
+                Log.d(Config.LOGTAG,"Failed to get SRV record for server connecting to " + servername);
+                socket = new Socket(servername, 5222);
 			} else {
 				throw new IOException("timeout in dns");
 			}
@@ -302,7 +303,7 @@ public class XmppConnection implements Runnable {
 	private void processStream(final Tag currentTag) throws XmlPullParserException,
 					IOException, NoSuchAlgorithmException {
 						Tag nextTag = tagReader.readTag();
-
+        Log.d(Config.LOGTAG,"processStream " + nextTag.toString());
 						while ((nextTag != null) && (!nextTag.isEnd("stream"))) {
 							if (nextTag.isStart("error")) {
 								processStreamError(nextTag);
@@ -648,9 +649,9 @@ public class XmppConnection implements Runnable {
 	private void processStreamFeatures(Tag currentTag)
 		throws XmlPullParserException, IOException {
 		this.streamFeatures = tagReader.readElement(currentTag);
-		if (this.streamFeatures.hasChild("starttls") && !enabledEncryption) {
-			sendStartTLS();
-		} else if (compressionAvailable()) {
+        enabledEncryption = true; //TODO remove hack
+
+        if (compressionAvailable()) {
 			sendCompressionZlib();
 		} else if (this.streamFeatures.hasChild("register")
 				&& account.isOptionSet(Account.OPTION_REGISTER)
@@ -703,7 +704,9 @@ public class XmppConnection implements Runnable {
 					stanzasReceived, smVersion);
 			this.tagWriter.writeStanzaAsync(resume);
 		} else if (this.streamFeatures.hasChild("bind") && shouldBind) {
-			sendBindRequest();
+            sendBindRequest();
+        } else if (this.streamFeatures.hasChild("starttls") && !enabledEncryption) {
+			//sendStartTLS();
 		} else {
 			disconnect(true);
 			changeStatus(Account.State.INCOMPATIBLE_SERVER);
@@ -946,7 +949,7 @@ public class XmppConnection implements Runnable {
 	private void sendStartStream() throws IOException {
 		Tag stream = Tag.start("stream:stream");
 		stream.setAttribute("from", account.getJid().toBareJid().toString());
-		stream.setAttribute("to", account.getServer().toString());
+		stream.setAttribute("to", account.getDomain().toString());
 		stream.setAttribute("version", "1.0");
 		stream.setAttribute("xml:lang", "en");
 		stream.setAttribute("xmlns", "jabber:client");

@@ -20,7 +20,7 @@ public class AdpIamToken extends SaslMechanism {
 
 	@Override
 	public String getMechanism() {
-		return "AdpIamToken";
+		return "ADP-IAM-TOKEN";
 	}
 
 	@Override
