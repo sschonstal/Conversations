@@ -29,6 +29,7 @@ public class Account extends AbstractEntity {
 
 	public static final String TABLENAME = "accounts";
 
+    public static final String CDKUSERNAME = "cdkusername";
 	public static final String USERNAME = "username";
 	public static final String SERVER = "server";
 	public static final String PASSWORD = "password";
@@ -110,6 +111,7 @@ public class Account extends AbstractEntity {
 	public List<Conversation> pendingConferenceJoins = new CopyOnWriteArrayList<>();
 	public List<Conversation> pendingConferenceLeaves = new CopyOnWriteArrayList<>();
 	protected Jid jid;
+    protected String cdkUser;
 	protected String password;
 	protected int options = 0;
 	protected String rosterVersion;
@@ -131,12 +133,12 @@ public class Account extends AbstractEntity {
 
 	public Account(final Jid jid, final String password) {
 		this(java.util.UUID.randomUUID().toString(), jid,
-				password, 0, null, "", null);
+				password, 0, null, "", null, null);
 	}
 
 	public Account(final String uuid, final Jid jid,
 			final String password, final int options, final String rosterVersion, final String keys,
-			final String avatar) {
+			final String avatar, final String cdkUser) {
 		this.uuid = uuid;
 		this.jid = jid;
 		if (jid.isBareJid()) {
@@ -151,6 +153,7 @@ public class Account extends AbstractEntity {
 			this.keys = new JSONObject();
 		}
 		this.avatar = avatar;
+        this.cdkUser =cdkUser;
 	}
 
 	public static Account fromCursor(final Cursor cursor) {
@@ -160,13 +163,20 @@ public class Account extends AbstractEntity {
 					cursor.getString(cursor.getColumnIndex(SERVER)), "mobile");
 		} catch (final InvalidJidException ignored) {
 		}
+        String cdkUser = "";
+        try {
+            cdkUser = cursor.getString(cursor.getColumnIndex(CDKUSERNAME));
+        } catch (Exception e) {
+            //TODO delete this account?
+        }
 		return new Account(cursor.getString(cursor.getColumnIndex(UUID)),
 				jid,
 				cursor.getString(cursor.getColumnIndex(PASSWORD)),
 				cursor.getInt(cursor.getColumnIndex(OPTIONS)),
 				cursor.getString(cursor.getColumnIndex(ROSTERVERSION)),
 				cursor.getString(cursor.getColumnIndex(KEYS)),
-				cursor.getString(cursor.getColumnIndex(AVATAR)));
+				cursor.getString(cursor.getColumnIndex(AVATAR)),
+                cdkUser);
 	}
 
 	public boolean isOptionSet(final int option) {
@@ -180,6 +190,14 @@ public class Account extends AbstractEntity {
 			this.options &= ~(1 << option);
 		}
 	}
+
+    public String getCdkUser() {
+        return cdkUser;
+    }
+
+    public void setCdkUser(final String cdkUser) {
+        this.cdkUser = cdkUser;
+    }
 
 	public String getUsername() {
 		return jid.getLocalpart();
@@ -264,6 +282,7 @@ public class Account extends AbstractEntity {
 		values.put(KEYS, this.keys.toString());
 		values.put(ROSTERVERSION, rosterVersion);
 		values.put(AVATAR, avatar);
+		values.put(CDKUSERNAME, cdkUser);
 		return values;
 	}
 

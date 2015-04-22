@@ -46,6 +46,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
 
 import eu.siacs.conversations.Config;
+import eu.siacs.conversations.crypto.sasl.AdpIamToken;
 import eu.siacs.conversations.crypto.sasl.DigestMd5;
 import eu.siacs.conversations.crypto.sasl.Plain;
 import eu.siacs.conversations.crypto.sasl.SaslMechanism;
@@ -567,9 +568,11 @@ public class XmppConnection implements Runnable {
 					.findChild("mechanisms"));
 			final Element auth = new Element("auth");
 			auth.setAttribute("xmlns", "urn:ietf:params:xml:ns:xmpp-sasl");
-			if (mechanisms.contains("SCRAM-SHA-1")) {
+            if (mechanisms.contains("ADP-IAM-TOKEN")) {
+                saslMechanism = new AdpIamToken(tagWriter, account);
+            } else if (mechanisms.contains("SCRAM-SHA-1")) {
 				saslMechanism = new ScramSha1(tagWriter, account, mXmppConnectionService.getRNG());
-			} else if (mechanisms.contains("PLAIN")) {
+            } else if (mechanisms.contains("PLAIN")) {
 				saslMechanism = new Plain(tagWriter, account);
 			} else if (mechanisms.contains("DIGEST-MD5")) {
 				saslMechanism = new DigestMd5(tagWriter, account, mXmppConnectionService.getRNG());

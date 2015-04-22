@@ -24,6 +24,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import eu.siacs.conversations.R;
+import eu.siacs.conversations.cdk.iam.Iam;
+import eu.siacs.conversations.cdk.iam.IamLoginAsync;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
 import eu.siacs.conversations.ui.adapter.KnownHostsAdapter;
@@ -36,7 +38,8 @@ import eu.siacs.conversations.xmpp.pep.Avatar;
 
 public class EditAccountActivity extends XmppActivity implements OnAccountUpdate{
 
-	private AutoCompleteTextView mAccountJid;
+	private AutoCompleteTextView mAccountName;
+    private String mAccountJid;
 	private EditText mPassword;
 	private EditText mPasswordConfirm;
 	private CheckBox mRegisterNew;
@@ -72,29 +75,39 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 				xmppConnectionService.updateAccount(mAccount);
 				return;
 			}
-			final boolean registerNewAccount = mRegisterNew.isChecked();
+			final boolean registerNewAccount = false;
+
+            final String password = mPassword.getText().toString();
+            final String passwordConfirm = mPasswordConfirm.getText().toString();
+
+            if (registerNewAccount) {
+                if (!password.equals(passwordConfirm)) {
+                    mPasswordConfirm.setError(getString(R.string.passwords_do_not_match));
+                    mPasswordConfirm.requestFocus();
+                    return;
+                }
+            }
+
 			final Jid jid;
-			try {
-				jid = Jid.fromString(mAccountJid.getText().toString());
-			} catch (final InvalidJidException e) {
-				mAccountJid.setError(getString(R.string.invalid_jid));
-				mAccountJid.requestFocus();
-				return;
-			}
-			if (jid.isDomainJid()) {
-				mAccountJid.setError(getString(R.string.invalid_jid));
-				mAccountJid.requestFocus();
-				return;
-			}
-			final String password = mPassword.getText().toString();
-			final String passwordConfirm = mPasswordConfirm.getText().toString();
-			if (registerNewAccount) {
-				if (!password.equals(passwordConfirm)) {
-					mPasswordConfirm.setError(getString(R.string.passwords_do_not_match));
-					mPasswordConfirm.requestFocus();
-					return;
-				}
-			}
+            final IamLoginAsync iamLogin = new IamLoginAsync();
+            try {
+                iamLogin.execute(mAccountName.getText().toString(), mPassword.getText().toString());
+                iamLogin.get();
+            } catch (Exception e) {
+                mAccountName.setError(getString(R.string.cdk_login_failed));
+                mAccountName.requestFocus();
+                return;
+            }
+
+            Iam iam = Iam.getInstance();
+            try {
+                jid = Jid.fromString(iam.getJid());
+            } catch (Exception e) {
+                mAccountName.setError(getString(R.string.cdk_login_failed_jid));
+                mAccountName.requestFocus();
+                return;
+            }
+
 			if (mAccount != null) {
 				try {
 					mAccount.setUsername(jid.hasLocalpart() ? jid.getLocalpart() : "");
@@ -102,22 +115,23 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 				} catch (final InvalidJidException ignored) {
 					return;
 				}
-				mAccountJid.setError(null);
+                mAccountName.setError(null);
 				mPasswordConfirm.setError(null);
-				mAccount.setPassword(password);
+				mAccount.setPassword(iam.getToken());
 				mAccount.setOption(Account.OPTION_REGISTER, registerNewAccount);
 				xmppConnectionService.updateAccount(mAccount);
 			} else {
 				try {
-					if (xmppConnectionService.findAccountByJid(Jid.fromString(mAccountJid.getText().toString())) != null) {
-						mAccountJid.setError(getString(R.string.account_already_exists));
-						mAccountJid.requestFocus();
+					if (xmppConnectionService.findAccountByJid(jid) != null) {
+						mAccountName.setError(getString(R.string.account_already_exists));
+						mAccountName.requestFocus();
 						return;
 					}
-				} catch (final InvalidJidException e) {
+				} catch (final Exception e) {
 					return;
 				}
 				mAccount = new Account(jid.toBareJid(), password);
+                mAccount.setCdkUser(mAccountName.getText().toString());
 				mAccount.setOption(Account.OPTION_USETLS, true);
 				mAccount.setOption(Account.OPTION_USECOMPRESSION, true);
 				mAccount.setOption(Account.OPTION_REGISTER, registerNewAccount);
@@ -265,8 +279,8 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 	}
 
 	protected boolean accountInfoEdited() {
-		return (!this.mAccount.getJid().toBareJid().toString().equals(
-					this.mAccountJid.getText().toString()))
+		return (!this.mAccount.getJid().toBareJid().toString().equals(""))
+					//this.mAccountJid.getText().toString()))
 			|| (!this.mAccount.getPassword().equals(
 						this.mPassword.getText().toString()));
 	}
@@ -283,15 +297,14 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_edit_account);
-		this.mAccountJid = (AutoCompleteTextView) findViewById(R.id.account_jid);
-		this.mAccountJid.addTextChangedListener(this.mTextWatcher);
+		setContentView(R.layout.cdk_activity_edit_account);
+		this.mAccountName = (AutoCompleteTextView) findViewById(R.id.account_cdk_username);
+		this.mAccountName.addTextChangedListener(this.mTextWatcher);
 		this.mPassword = (EditText) findViewById(R.id.account_password);
 		this.mPassword.addTextChangedListener(this.mTextWatcher);
 		this.mPasswordConfirm = (EditText) findViewById(R.id.account_password_confirm);
 		this.mAvatar = (ImageView) findViewById(R.id.avater);
 		this.mAvatar.setOnClickListener(this.mAvatarClickListener);
-		this.mRegisterNew = (CheckBox) findViewById(R.id.account_register_new);
 		this.mStats = (LinearLayout) findViewById(R.id.stats);
 		this.mSessionEst = (TextView) findViewById(R.id.session_est);
 		this.mServerInfoRosterVersion = (TextView) findViewById(R.id.server_info_roster_version);
@@ -309,19 +322,6 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 		this.mSaveButton.setOnClickListener(this.mSaveButtonClickListener);
 		this.mCancelButton.setOnClickListener(this.mCancelButtonClickListener);
 		this.mMoreTable = (TableLayout) findViewById(R.id.server_info_more);
-		final OnCheckedChangeListener OnCheckedShowConfirmPassword = new OnCheckedChangeListener() {
-			@Override
-			public void onCheckedChanged(final CompoundButton buttonView,
-					final boolean isChecked) {
-				if (isChecked) {
-					mPasswordConfirm.setVisibility(View.VISIBLE);
-				} else {
-					mPasswordConfirm.setVisibility(View.GONE);
-				}
-				updateSaveButton();
-			}
-		};
-		this.mRegisterNew.setOnCheckedChangeListener(OnCheckedShowConfirmPassword);
 	}
 
 	@Override
@@ -388,7 +388,7 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 			this.mCancelButton.setEnabled(false);
 			this.mCancelButton.setTextColor(getSecondaryTextColor());
 		}
-		this.mAccountJid.setAdapter(mKnownHostsAdapter);
+		this.mAccountName.setAdapter(mKnownHostsAdapter);
 		updateSaveButton();
 	}
 
@@ -414,7 +414,8 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 	}
 
 	private void updateAccountInformation() {
-		this.mAccountJid.setText(this.mAccount.getJid().toBareJid().toString());
+        //TODO set this to account name
+		this.mAccountName.setText(this.mAccount.getJid().toBareJid().toString());
 		this.mPassword.setText(this.mAccount.getPassword());
 		if (this.jidToEdit != null) {
 			this.mAvatar.setVisibility(View.VISIBLE);
@@ -494,10 +495,10 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 			}
 		} else {
 			if (this.mAccount.errorStatus()) {
-				this.mAccountJid.setError(getString(this.mAccount.getStatus().getReadableId()));
-				this.mAccountJid.requestFocus();
+				this.mAccountName.setError(getString(this.mAccount.getStatus().getReadableId()));
+				this.mAccountName.requestFocus();
 			} else {
-				this.mAccountJid.setError(null);
+				this.mAccountName.setError(null);
 			}
 			this.mStats.setVisibility(View.GONE);
 		}

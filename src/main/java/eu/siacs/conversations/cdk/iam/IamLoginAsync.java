@@ -1,7 +1,24 @@
 package eu.siacs.conversations.cdk.iam;
 
-/**
- * Created by schonsts on 4/18/15.
- */
-public class IamLoginAsync {
+import android.os.AsyncTask;
+
+public class IamLoginAsync extends AsyncTask<String, String, Boolean> {
+
+    private Exception exception;
+
+    @Override
+    public Boolean doInBackground(String... params) {
+        try {
+            Iam iam = Iam.getInstance();
+            iam.login(params[0], params[1]);
+        } catch (Exception e) {
+            exception= e;
+            return false;
+        }
+        return true;
+    }
+
+    public Exception getException() {
+        return exception;
+    }
 }

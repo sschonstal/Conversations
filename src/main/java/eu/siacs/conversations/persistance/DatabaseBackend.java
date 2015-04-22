@@ -48,6 +48,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 				+ Account.SERVER + " TEXT," + Account.PASSWORD + " TEXT,"
 				+ Account.ROSTERVERSION + " TEXT," + Account.OPTIONS
 				+ " NUMBER, " + Account.AVATAR + " TEXT, " + Account.KEYS
+                + " TEXT, " + Account.CDKUSERNAME
 				+ " TEXT)");
 		db.execSQL("create table " + Conversation.TABLENAME + " ("
 				+ Conversation.UUID + " TEXT PRIMARY KEY, " + Conversation.NAME
@@ -130,6 +131,10 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 			db.execSQL("delete from "+Contact.TABLENAME);
 			db.execSQL("update "+Account.TABLENAME+" set "+Account.ROSTERVERSION+" = NULL");
 		}
+        if (oldVersion < 13 && newVersion >= 13) {
+            db.execSQL("ALTER TABLE " + Account.TABLENAME + " ADD COLUMN "
+                    + Account.CDKUSERNAME + " TEXT");
+        }
 	}
 
 	public static synchronized DatabaseBackend getInstance(Context context) {
