@@ -42,7 +42,6 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
     private String mAccountJid;
 	private EditText mPassword;
 	private EditText mPasswordConfirm;
-	private CheckBox mRegisterNew;
 	private Button mCancelButton;
 	private Button mSaveButton;
 	private TableLayout mMoreTable;
@@ -358,7 +357,6 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 				this.jidToEdit = null;
 			}
 			if (this.jidToEdit != null) {
-				this.mRegisterNew.setVisibility(View.GONE);
 				if (getActionBar() != null) {
 					getActionBar().setTitle(getString(R.string.account_details));
 				}
@@ -414,20 +412,11 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 	}
 
 	private void updateAccountInformation() {
-        //TODO set this to account name
-		this.mAccountName.setText(this.mAccount.getJid().toBareJid().toString());
+		this.mAccountName.setText(this.mAccount.getCdkUser());
 		this.mPassword.setText(this.mAccount.getPassword());
 		if (this.jidToEdit != null) {
 			this.mAvatar.setVisibility(View.VISIBLE);
 			this.mAvatar.setImageBitmap(avatarService().get(this.mAccount, getPixel(72)));
-		}
-		if (this.mAccount.isOptionSet(Account.OPTION_REGISTER)) {
-			this.mRegisterNew.setVisibility(View.VISIBLE);
-			this.mRegisterNew.setChecked(true);
-			this.mPasswordConfirm.setText(this.mAccount.getPassword());
-		} else {
-			this.mRegisterNew.setVisibility(View.GONE);
-			this.mRegisterNew.setChecked(false);
 		}
 		if (this.mAccount.isOnlineAndConnected() && !this.mFetchingAvatar) {
 			this.mStats.setVisibility(View.VISIBLE);
