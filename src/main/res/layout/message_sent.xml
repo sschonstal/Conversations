@@ -98,6 +98,7 @@
         android:id="@+id/message_photo"
         android:layout_width="48dp"
         android:layout_height="48dp"
+        android:background="@drawable/avatar_background"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
         android:layout_marginLeft="-1.5dp"
