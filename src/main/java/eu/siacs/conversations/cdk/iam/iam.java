@@ -3,10 +3,13 @@ package eu.siacs.conversations.cdk.iam;
 import android.os.AsyncTask;
 import android.test.InstrumentationTestCase;
 import android.util.Log;
+import android.util.Base64;
 
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -20,6 +23,7 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +33,7 @@ import eu.siacs.conversations.Config;
 public class Iam {
 
     private static Iam instance = null;
-    private static HttpClient httpclient;
+    private static DefaultHttpClient httpclient;
     private String iamLoginServer = "login-stage.adpedge.com";
     private String iamApiServer = "api-stage.adpedge.com";
 
@@ -56,7 +60,7 @@ public class Iam {
     }
 
     public void login(String username, String password) {
-        HttpResponse response = postLogin(username, password);
+        HttpResponse response = postLoginOauth(username, password);
         getSmofcCookie(response);
         getJid(response);
         return;
@@ -92,36 +96,21 @@ public class Iam {
         return jid;
     }
 
-    private HttpResponse postLogin(String username, String password)  {
-
+    public HttpResponse postLoginOauth(String username, String password) {
         HttpResponse retval = null;
-        HttpPost httppost = new HttpPost("https://login-stage.adpedge.com/siteminderagent/forms/login.fcc");
+
+        HttpPost httppost = new HttpPost("https://" + iamLoginServer + "/oauth/getorcreatesessiontoken");
 
         try {
-            httppost.setHeader("Connection", "keep-alive");
-            httppost.setHeader("Origin", "https://login-stage.adpedge.com");
-            httppost.setHeader("Cookie", "loginId=" + username );
-            httppost.setHeader("Content-Type", "application/x-www-form-urlencoded");
-            httppost.setHeader("Referer", "https://login-stage.adpedge.com/sso/common-login");
-            httppost.setHeader("Cache-Control", "max-age=0");
-            httppost.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-            httppost.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36");
-            httppost.setHeader("Accept-Encoding", "gzip, deflate");
+            httppost.setHeader("Accept", "*/*");
+            httppost.setHeader("Content-Type", "application/json");
+            httppost.setHeader("Accept-Encoding", "gzip,deflate,sdch");
             httppost.setHeader("Accept-Language", "en-US,en;q=0.8");
 
-
-            // Add your data
-            List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-            nameValuePairs.add(new BasicNameValuePair("username", username));
-            nameValuePairs.add(new BasicNameValuePair("password", password));
-            nameValuePairs.add(new BasicNameValuePair("SMENC", "ISO-8859-1"));
-            nameValuePairs.add(new BasicNameValuePair("SMLOCALE", "US-EN"));
-            nameValuePairs.add(new BasicNameValuePair("USER", username));
-            nameValuePairs.add(new BasicNameValuePair("target", "-SM-https://login--stage.adpedge.com/sso/route/redirector.php"));
-            httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-
-            // Execute HTTP Post Request
-            retval =  httpclient.execute(httppost);
+            httpclient.getCredentialsProvider().setCredentials(
+                    new AuthScope(iamLoginServer, 443),
+                    new UsernamePasswordCredentials(username, password));
+            retval = httpclient.execute(httppost);
         } catch (ClientProtocolException e) {
             Log.d(Config.LOGTAG, "Failed to get IAM token" + e.getMessage());
         } catch (IOException e) {
@@ -129,6 +118,14 @@ public class Iam {
         }
         return retval;
     }
+
+   // curl -vv 'https://login-stage.adpedge.com/oauth/getorcreatesessiontoken'
+   // -H 'Accept-Encoding: gzip,deflate,sdch'
+   // -H 'Accept-Language: en-US,en;q=0.8'
+   // -H 'Content-Type: application/json'
+   // -H 'Accept: */*'
+   // --compressed
+   // --user 'schonsts:yetiPASS$' --data-binary '{}'
 
     public String getComminicationEdgeId() {
 
