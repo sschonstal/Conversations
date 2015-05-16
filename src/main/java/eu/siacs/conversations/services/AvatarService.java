@@ -252,7 +252,6 @@ public class AvatarService {
 				Typeface.NORMAL));
 		textPaint.setTextSize((float) ((right - left) * 0.8));
 		Rect rect = new Rect();
-
 		canvas.drawRect(new Rect(left, top, right, bottom), tilePaint);
 		textPaint.getTextBounds(letter, 0, 1, rect);
 		float width = textPaint.measureText(letter);

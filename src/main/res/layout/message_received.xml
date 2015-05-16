@@ -7,86 +7,99 @@
     android:paddingLeft="8dp"
     android:paddingRight="8dp"
     android:paddingTop="4dp" >
-
-    <LinearLayout
-        android:id="@+id/message_box"
+    <RelativeLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_toRightOf="@+id/message_photo"
-        android:background="@drawable/message_border"
-        android:minHeight="48dp"
-        android:longClickable="true">
+        android:layout_toRightOf="@+id/message_photo">
+
 
         <LinearLayout
+            android:id="@+id/message_box"
             android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:background="@color/primarybackground"
-            android:gravity="center_vertical"
-            android:orientation="vertical"
-            android:paddingBottom="4dp"
-            android:paddingLeft="5dp"
-            android:paddingRight="5dp"
-            android:paddingTop="4dp" >
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:background="@drawable/message_border"
+            android:minHeight="48dp"
+            android:layout_marginLeft="9dp"
+            android:longClickable="true">
 
-            <ImageView
-                android:id="@+id/message_image"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:adjustViewBounds="true"
-                android:background="@color/primarytext"
-                android:paddingBottom="2dp"
-                android:scaleType="centerCrop" />
-
-            <TextView
-                android:id="@+id/message_body"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:autoLink="web"
-                android:textColor="@color/primarytext"
-                android:textSize="?attr/TextSizeBody" />
-
-            <Button
-                android:id="@+id/download_button"
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/download_image"
-                android:visibility="gone" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingTop="1dp" >
+                android:layout_height="fill_parent"
+                android:background="@color/primarybackground"
+                android:gravity="center_vertical"
+                android:orientation="vertical"
+                android:paddingBottom="4dp"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
+                android:paddingTop="4dp" >
 
                 <ImageView
-                    android:id="@+id/security_indicator"
-                    android:layout_width="?attr/TextSizeInfo"
-                    android:layout_height="?attr/TextSizeInfo"
-                    android:layout_gravity="center_vertical"
-                    android:layout_marginRight="4sp"
-                    android:alpha="0.54"
-                    android:gravity="center_vertical"
-                    android:src="@drawable/ic_secure_indicator" />
-
-                <TextView
-                    android:id="@+id/message_time"
+                    android:id="@+id/message_image"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:gravity="center_vertical"
-                    android:text="@string/sending"
-                    android:textColor="@color/secondarytext"
-                    android:textSize="?attr/TextSizeInfo" />
+                    android:adjustViewBounds="true"
+                    android:background="@color/primarytext"
+                    android:paddingBottom="2dp"
+                    android:scaleType="centerCrop" />
+
+                <TextView
+                    android:id="@+id/message_body"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:autoLink="web"
+                    android:textColor="@color/primarytext"
+                    android:textSize="?attr/TextSizeBody" />
+
+                <Button
+                    android:id="@+id/download_button"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/download_image"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingTop="1dp" >
+
+                    <ImageView
+                        android:id="@+id/security_indicator"
+                        android:layout_width="?attr/TextSizeInfo"
+                        android:layout_height="?attr/TextSizeInfo"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginRight="4sp"
+                        android:alpha="0.54"
+                        android:gravity="center_vertical"
+                        android:src="@drawable/ic_secure_indicator" />
+
+                    <TextView
+                        android:id="@+id/message_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:gravity="center_vertical"
+                        android:text="@string/sending"
+                        android:textColor="@color/secondarytext"
+                        android:textSize="?attr/TextSizeInfo" />
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
+        <ImageView
+            android:id="@+id/received_beak"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            />
+    </RelativeLayout>
 
     <ImageView
         android:id="@+id/message_photo"
         android:layout_width="48dp"
         android:layout_height="48dp"
+        android:background="@drawable/avatar_background"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
         android:layout_marginRight="-1.5dp"

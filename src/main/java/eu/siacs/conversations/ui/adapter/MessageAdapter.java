@@ -3,6 +3,11 @@ package eu.siacs.conversations.ui.adapter;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.text.Spannable;
@@ -349,6 +354,47 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		viewHolder.image.setOnLongClickListener(openContextMenu);
 	}
 
+    private Bitmap getBeak(int type) {
+
+        int width = (int) 22;
+        int height = (int) 22;
+
+
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Paint beakPaint = new Paint();
+        beakPaint.setColor(activity.getResources().getColor(R.color.primarybackground));
+        beakPaint.setStyle(Paint.Style.FILL);
+        beakPaint.setAntiAlias(true);
+        beakPaint.setStrokeWidth(2);
+        Canvas canvas = new Canvas(bitmap);
+
+        Path path = new Path();
+        path.setFillType(Path.FillType.EVEN_ODD);
+        path.moveTo(0, 0);
+        path.lineTo(width, height);
+        path.lineTo(width, 0);
+        path.lineTo(0, 0);
+
+        canvas.drawPath(path, beakPaint);
+
+        Paint borderPaint = new Paint();
+        borderPaint.setColor(activity.getResources().getColor(R.color.divider));
+        borderPaint.setStyle(Paint.Style.STROKE);
+        borderPaint.setAntiAlias(true);
+        borderPaint.setStrokeWidth(6);
+
+        canvas.drawLine(0, 0, width, 0, borderPaint);
+        borderPaint.setStrokeWidth(3);
+        canvas.drawLine(3, 3, width - 3 , height - 3, borderPaint);
+
+        if(type == SENT) {
+            Matrix m = new Matrix();
+            m.preScale(-1, 1);
+            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, false);
+        }
+        return bitmap;
+    }
+
 	@Override
 	public View getView(int position, View view, ViewGroup parent) {
 		final Message message = getItem(position);
@@ -382,6 +428,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 						.findViewById(R.id.message_time);
 					viewHolder.indicatorReceived = (ImageView) view
 						.findViewById(R.id.indicator_received);
+                    viewHolder.beak = (ImageView) view
+                            .findViewById(R.id.sent_beak);
 					break;
 				case RECEIVED:
 					view = activity.getLayoutInflater().inflate(
@@ -402,6 +450,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 						.findViewById(R.id.message_time);
 					viewHolder.indicatorReceived = (ImageView) view
 						.findViewById(R.id.indicator_received);
+                    viewHolder.beak = (ImageView) view
+                            .findViewById(R.id.received_beak);
 					break;
 				case STATUS:
 					view = activity.getLayoutInflater().inflate(R.layout.message_status, parent, false);
@@ -419,6 +469,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 				return view;
 			}
 		}
+
+        if(viewHolder.beak != null) {
+            viewHolder.beak.setImageBitmap(getBeak(type));
+        }
 
 		if (type == STATUS) {
 			if (conversation.getMode() == Conversation.MODE_SINGLE) {
@@ -593,5 +647,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		protected TextView messageBody;
 		protected ImageView contact_picture;
 		protected TextView status_message;
+        protected ImageView beak;
 	}
 }
