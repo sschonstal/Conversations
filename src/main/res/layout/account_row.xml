@@ -10,6 +10,7 @@
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_alignParentLeft="true"
+        android:background="@drawable/avatar_background"
         android:src="@drawable/ic_profile"
         android:contentDescription="@string/account_image_description">
     </ImageView>

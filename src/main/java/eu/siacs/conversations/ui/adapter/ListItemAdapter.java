@@ -122,10 +122,9 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
 
 	public void loadAvatar(ListItem item, ImageView imageView) {
 		if (cancelPotentialWork(item, imageView)) {
-			final Bitmap bm = activity.avatarService().get(item,activity.getPixel(48),true);
+			final Bitmap bm = activity.avatarService().get(item,activity.getPixel(48),false);
 			if (bm != null) {
 				imageView.setImageBitmap(bm);
-				imageView.setBackgroundColor(0x00000000);
 			} else {
 				imageView.setBackgroundColor(UIHelper.getColorForName(item.getDisplayName()));
 				imageView.setImageDrawable(null);
